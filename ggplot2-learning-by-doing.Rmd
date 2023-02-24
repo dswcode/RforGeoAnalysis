@@ -1,0 +1,1903 @@
+---
+title: "ggplot2 Learning by Doing"
+author: "Shawn"
+date: "2022-08-11"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1、 ggplot2简介
+
+ggplot2是基于图层图形语法（the Grammar of Graphics），绘图时会反复提到以下几个概念，
+
+-   数据集 (data): 绘图数据集。
+-   几何对象 (geom): 数据展示的形状，譬如折线图 (geom_line)、柱状图 (geom_bar)等，是以geom_打头的函数。
+-   图像属性 (aes): geom对象的颜色、大小、形状等，是以aes_打头的函数。
+-   标度 (scale):将数据取值映射到图形空间，使用颜色，形状，大小表示不同取值，使用图例，网格线展示标度，是以scale_打头的函数。
+-   统计变换 (stat): 对数据的汇总，是以stat_打头的函数。
+-   坐标系 (coord): 描述数据如何映射到图形，同时包含坐标轴和网格线axes, gridlines，是以coord_开头的函数。
+-   分面（facet）: 将数据拆分为小子集，对各子集作图并联合展示，也成条件作图或网格图，是以facet_打头的函数。
+-   绘图主题 (theme): 主题涉及图形更细的方面，如背景色，字体大小等，是以theme_打头的函数。
+
+## 2、本教程数据集
+
+```{r}
+library(readr)
+chic <- read_csv("https://raw.githubusercontent.com/z3tt/ggplot-courses/master/data/chicago-nmmaps.csv", show_col_types = FALSE)
+head(chic)
+```
+
+## 3、快速开始使用ggplot2
+
+```{r echo = FALSE}
+#方法1
+library(ggplot2)
+
+#方法2
+library(tidyverse) #通过tidyverse导入ggplot2，tidyverse包含了ggplot2、dplyr、tidyr等R包
+```
+
+### 3.1、定义面板
+
+指定数据集（data） 图像属性（aes）
+
+```{r}
+g <- ggplot(data = chic, aes(x = date, y = temp))
+g
+
+```
+
+### 3.2、 添加几何对象 (geom)
+
+```{r}
+g + geom_point() #添加散点
+
+g + geom_line() #添加折线
+
+g+ geom_line() + geom_point() #联合使用折线、散点
+
+```
+
+### 3.3、个性化几何对象
+
+```{r}
+# 修改散点的颜色、形状、大小
+g + geom_point(color = "firebrick", shape = "diamond", size = 2)
+
+g + geom_point(color = "firebrick", shape = "diamond", size = 2) + #修改散点的颜色、形状、大小
+    geom_line(color = "firebrick", linetype = "dotted", size = .3) #修改折线的颜色、形状、大小
+```
+
+### 3.4、修改ggplot2默认主题
+
+```{r}
+theme_set(theme_bw()) #修改ggplot2默认主题
+
+g + geom_point(color = "firebrick")
+```
+
+## 4、坐标轴 (Axes)设置
+
+### 4.1、 添加坐标轴标题(axis.title)
+
+方法1 使用labs()函数
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") #labs分别为x y轴添加标题
+```
+
+方法2 使用xlab()和ylab()函数
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  xlab("Year") +
+  ylab("Temperature (°F)")
+```
+
+### 4.2、坐标轴标题上标
+
+```{r}
+#ggplot(chic, aes (x = date, y = temp)) +
+#  geom_point(color = "firebrick") +
+#  labs(x = "Year", y = expression(paste("Temperature (", degree ~ F, ")"^"为什么不使用国际单位？"))) +
+#  theme(text = element_text(family='STHeiti Light'))
+
+
+## 如果中文字体不显示
+#install.packages("showtext")
+#library(showtext)
+#font_families()
+#showtext_auto(enable = TRUE)
+## mac可以打开字体薄，选择中意的字体，右键在文件夹中显示然后Command+Option+C复制路径就行
+##family name随便起或者和字体名字一样，只是个代号，路径填字体文件的绝对路径，后面声明family = #"<family_name>"就行
+#font_add( family = "STHeiti Light", regular =  "/System/Library/Fonts/STHeiti Light.ttc")
+#
+##font_files()可以查看可用字体的路径和名字
+#font_files()
+#
+## 然后再绘图最后增加一行theme字体设定
+#theme(text = element_text(family='STHeiti Light'))
+
+```
+
+### 4.3、坐标轴与轴标题(axis.title)间距
+
+方法1 通过theme()函数、axis.title、element_text、vjust
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(axis.title.x = element_text(vjust = 1, size = 13), #vjust设置间距、size标题大小
+        axis.title.y = element_text(vjust = 3, size = 13))
+```
+
+方法2 通过theme()函数、axis.title、element_text、margin中包含四个参数margin(t, r, b, l) ，t、b可调节x轴标题上下移动，r、l可调节y轴标题左右移动，
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(axis.title.x = element_text(margin = margin(t = 10), size = 12),
+        axis.title.y = element_text(margin = margin(r = 10), size = 12))
+```
+
+### 4.4、修改坐标轴标题(axis.title)外观
+
+通过theme()函数、axis.title、element_text、修改标题的大小，颜色和字体
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(axis.title = element_text(size = 15, color = "firebrick",
+                                  face =  "italic"))#同时修改修改坐标轴标题大小、颜色、字体
+```
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  #分别修改x、y轴标题颜色、大小 
+  theme(axis.title.x = element_text(color = "sienna", size = 15),
+        axis.title.y = element_text(color = "orangered", size = 15))
+```
+
+axis.title、axis.title.x、axis.title.y混用：同时修改部分共同特性，个性化部分特性，
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(axis.title = element_text(color = "green", size = 15),#同时修改共性
+        axis.title.y = element_text(color = "Blue", size = 15))#个性化y轴特性
+```
+
+### 4.5、修改轴刻度标签(axis.text)外观
+
+通过theme()函数、axis.text、element_text修改轴刻度标签颜色、字体、大小等
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(axis.text = element_text(color = "dodgerblue", size = 12),#同时修改x、y轴标签颜色、大小
+        axis.text.x = element_text(face = "italic"))#单独修改x轴标签字体
+```
+
+### 4.6、轴刻度标签(axis.text)角度设置
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  #angle设置
+  theme(axis.text.x = element_text(angle = 50, vjust = 1, hjust = 1, size = 12))
+```
+
+### 4.7、刻度标签(axis.text）、刻度值(axis.ticks)关闭
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(axis.ticks.y = element_blank(),#element_blank关闭刻度值
+        axis.text.y = element_blank())#element_blank关闭刻度标签
+```
+
+### 4.8、关闭轴标题
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = NULL, y = "") #NULL同时去掉x轴标题及其空间，""将y轴标题去掉保留空间
+```
+
+### 4.9、设罝轴刻度范围
+
+```{r}
+#方法1 ylim()函数
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  ylim(c(0, 50))#y轴刻度范围设置为0～50
+
+#方法2 
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  scale_y_continuous(limits = c(0, 50))
+```
+
+### 4.10、强制ggplot2从c0,0)开始绘图
+
+```{r}
+library(tidyverse)
+
+chic_high <- dplyr::filter(chic, temp > 25, o3 > 20)
+ggplot(chic_high, aes(x = temp, y = o3)) +
+  geom_point(color = "darkcyan") +
+  labs(x = "Temperature higher than 25°F",
+       y = "Ozone higher than 20 ppb") +
+  expand_limits(x = 0, y = 0) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_cartesian(clip = "off") # clip = "off" 允许在面板区域之外绘制，保留c(0,0)处的刻度
+```
+
+### 4.11、 使x轴和y轴的刻度比例保持一致
+
+```{r}
+ggplot(chic, aes(x = temp, y = temp + rnorm(nrow(chic), sd = 20))) +
+  geom_point(color = "sienna") +
+  labs(x = "Temperature (°F)", y = "Temperature (°F) + random noise") +
+  xlim(c(0, 100)) + ylim(c(0, 150)) +
+  coord_fixed(ratio = 1)  # coord_fixed (ration = 1/5)
+```
+
+### 4.12、通过函数设置刻度标签(axis. text)
+
+不用修改数据的情况下，为坐标轴添加单位 百分比等信息
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = NULL) +
+  scale_y_continuous(label = function(x) {return(paste(x, "Degrees Fahrenheit"))})
+```
+
+## 5、标题 (Titles)设置
+
+### 5.1、添加标题
+
+方法1 ggtitle()函数
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  ggtitle("Temperatures in Chicago")# ggtitle添加标题
+```
+
+方法2 通过labs()函数添加标题
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)",
+       title = "Temperatures in Chicago", #添加主标题
+       subtitle = "Seasonal pattern of daily temperatures from 1997 to 2001", #添加次标题
+       caption = "Data: NMMAPS",#下备注
+       tag = "Fig. 1") #上备注
+```
+
+### 5.2、标题加粗
+
+通过theme()中的plot.title设置，其它如plot.subtitle、 plot.caption、plot.caption、legend.title、legend.text,、axis.title、 axis.text设置类似。
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)",
+       title = "Temperatures in Chicago") +
+  theme(plot.title = element_text(face = "bold",#加粗
+                                  margin = margin(10, 0, 10, 0),#标题上下左右位置
+                                  size = 14))
+```
+
+### 5.3、标题位置
+
+方法1 hjust, vjust设置标题与坐标轴对齐
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = NULL,
+       title = "Temperatures in Chicago",
+       caption = "Data: NMMAPS") +
+  theme(plot.title = element_text(hjust = 1, size = 16, face = "bold.italic"))
+#hjust调整水品位置，vjust垂直位置
+```
+
+方法2、使用plot.title.position和plot.caption.position，此时，标题或备注与刻度标签对齐
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = NULL,
+       title = "Temperatures in Chicago",
+       caption = "Data: NMMAPS") + theme(
+          plot.title.position = "plot", #标题对齐
+          plot.caption.position = "plot")#备注对齐
+```
+
+### 5.4、为标题指定字体
+
+```{r}
+library(showtext)
+showtext_auto(enable=TRUE)
+
+font_path = "/System/Library/Fonts/Supplemental/Songti.ttc" #linux下可使用fc-list列出可用字体
+
+#字体加载到R中
+font_name = tools::file_path_sans_ext(basename(font_path))
+font_add(font_name, font_path)
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)",
+       title = "Temperatures in Chicago",
+       subtitle = "Daily temperatures in °F from 1997 to 2001") +
+  theme(plot.title = element_text(family = font_name, hjust = .5, size = 15),#使用字体
+        plot.subtitle = element_text(family = font_name, hjust = .5, size = 5))
+```
+
+### 5.5、修改多行文本之间的间距
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  ggtitle("Temperatures in Chicago\nfrom 1997 to 2001") +
+  theme(plot.title = element_text(lineheight = .8, size = 16))#使用lineheight
+```
+
+## 6、图例设置
+
+### 6.1、 图例关闭
+
+默认图例使开启的
+
+```{r}
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)")
+
+ggplot(chic,
+       aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(legend.position = "none") #关闭图例
+
+
+ggplot(chic,
+       aes(x = date, y = temp,
+           color = season, shape = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  guides(color = "none")#删除颜色图例
+
+```
+
+### 6.2、 删除图例标题
+
+```{r}
+#方法1
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(legend.title = element_blank())#element_blank()
+
+#方法2
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  labs(color = NULL)
+
+#方法3
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  scale_color_discrete(name = NULL)
+```
+
+### 6.3、设置图例位置
+
+```{r}
+#方法1、legend.position控制图例位置于上下左右
+
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(legend.position = "top")#“top”, “right”,“bottom”和“left”可选
+
+#方法2、让图例放置于图中任意位置为legend.position传入位置坐标c(x,y)即可，其中x, y范围为0～1，
+
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)",
+       color = NULL) +
+  theme(legend.position = c(.85, .65),#c(.85, .65)0.85对应x轴方向位置，0.65对应y轴方向位置
+        legend.background = element_rect(fill = "transparent"))
+```
+
+### 6.4、设置图例方向
+
+```{r}
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(legend.position = c(.5, .97),
+        legend.background = element_rect(fill = "transparent")) +
+  guides(color = guide_legend(direction = "horizontal"))#默认为垂直方向，此处修改为水平方向
+```
+
+### 6.5、设置图例标题字体外观
+
+```{r}
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(legend.title = element_text(family = "sans", #设置图例标题字体
+                                    color = "chocolate", #设置图例标题颜色
+                                    size = 14, face = "bold"))#设置图例标题大小、是否加粗
+```
+
+### 6.6、设置图例标题
+
+```{r}
+#方法1、labs
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)",
+       color = "Seasons\nindicated\nby colors:") + #图例标题分行显示
+  theme(legend.title = element_text(family = "sans",
+                                    color = "chocolate",
+                                    size = 14, face = "bold"))
+
+#方法2、scale_color_discrete(name = "title")
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(legend.title = element_text(family = "sans",
+                                    color = "chocolate",
+                                    size = 14, face = "bold")) +
+  scale_color_discrete(name = "Seasons\nindicated\nby colors:")
+
+#方法3、guides(color = guide_legend("title"))
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(legend.title = element_text(family = "sans",
+                                    color = "chocolate",
+                                    size = 14, face = "bold")) +
+  guides(color = guide_legend("Seasons\nindicated\nby colors:"))
+```
+
+### 6.7、设置图例关键字顺序
+
+```{r}
+chic$season <- factor(chic$season, levels = c("Winter", "Spring", "Summer", "Autumn")) #定义顺序
+
+ggplot(chic, aes(x = date, y = temp, color = season)) + 
+geom_point() + labs(x = "Year", y = "Temperature (°F)")
+```
+
+### 6.8、自定义图例关键字
+
+```{r}
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  scale_color_discrete(
+    name = "Seasons:", 
+    labels = c("Mar—May", "Jun—Aug", "Sep—Nov", "Dec—Feb") #自定义图例关键字
+  ) +
+  theme(legend.title = element_text(
+    family = "sans", color = "chocolate", size = 14, face = 2
+  ))
+```
+
+### 6.9、设置图例框的填充色
+
+```{r}
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(legend.key = element_rect(fill = "darkgoldenrod1"),#设置填充色，fill = NA 或者 fill = "transparent"关闭填充
+        legend.title = element_text(family = "sans",
+                                    color = "chocolate",
+                                    size = 14, face = 2)) +
+  scale_color_discrete("Seasons:")
+```
+
+### 6.10、设置图例符号大小
+
+```{r}
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(legend.key = element_rect(fill = NA),
+        legend.title = element_text(color = "chocolate",
+                                    size = 14, face = 2)) +
+  scale_color_discrete("Seasons:") +
+  guides(color = guide_legend(override.aes = list(size = 6)))#通过guides实现
+```
+
+### 6.11、 图例叠加
+
+```{r}
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +#geom_point图层
+  labs(x = "Year", y = "Temperature (°F)") +
+  geom_rug()#geom_rug图层，geom_rug(show.legend = FALSE)可关闭rug图例
+```
+
+### 6.12、手动添加图例
+
+```{r}
+ggplot(chic, aes(x = date, y = o3)) +
+  geom_line(aes(color = "line")) +
+  geom_point(aes(color = "points")) +
+  labs(x = "Year", y = "Ozone") +
+  scale_color_manual(name = NULL,
+                     guide = "legend",
+                     values = c("points" = "darkorange2",
+                                "line" = "gray")) + #使用 scale_color_manual() 函数
+  guides(color = guide_legend(override.aes = list(linetype = c(1, 0),
+                                                  shape = c(NA, 16))))
+```
+
+### 6.13、使用更多图例风格
+
+```{r}
+#连续变量 使用guide_colorbar or guide_colourbar()
+ggplot(chic,
+       aes(x = date, y = temp, color = temp)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)", color = "Temperature (°F)") +
+  guides(color = guide_colorbar()) #guide_colorbar()
+
+#连续变量强制使用guide_legend()展示离散的颜色
+ggplot(chic,
+       aes(x = date, y = temp, color = temp)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)", color = "Temperature (°F)") +
+  guides(color = guide_legend())#guide_legend()
+
+# guide_bins()分区
+ggplot(chic,
+       aes(x = date, y = temp, color = temp)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)", color = "Temperature (°F)") +
+  guides(color = guide_bins())#guide_bins()
+
+
+# colorsteps分区间
+ggplot(chic,
+       aes(x = date, y = temp, color = temp)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)", color = "Temperature (°F)") +
+  guides(color = guide_colorsteps())#guide_colorsteps()
+
+```
+
+## 7、图形背景、网格线设置
+
+### 7.1、图形背景色设置
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "#1D8565", size = 2) +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(panel.background = element_rect(
+    fill = "#64D2AA", color = "#64D2AA", size = 2)#panel.background
+  )
+```
+
+### 7.2、图形外框颜色设置
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "#1D8565", size = 2) +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(panel.border = element_rect(
+    fill = "#64D2AA99", color = "red", size = 2)
+  )#panel.border
+```
+
+### 7.3、主、副网格线设置
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(panel.grid.major = element_line(color = "gray10", size = .5),#主网格线
+        panel.grid.minor = element_line(color = "gray70", size = .25))#副网格线
+```
+
+### 7.4、x、y轴主副4类网格线分别设置
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(panel.grid.major = element_line(size = .5, linetype = "dashed"),#主
+        panel.grid.minor = element_line(size = .25, linetype = "dotted"),#副
+        panel.grid.major.x = element_line(color = "red1"),#x轴主
+        panel.grid.major.y = element_line(color = "blue1"),#y轴主
+        panel.grid.minor.x = element_line(color = "red4"),#x轴副
+        panel.grid.minor.y = element_line(color = "blue4"))#y轴副
+```
+
+### 7.5、网格线移除
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(panel.grid.minor = element_blank())#仅仅移除副网格线
+
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(panel.grid = element_blank())#网格线全移除
+```
+
+### 7.6、网格线间距设置
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  scale_y_continuous(breaks = seq(0, 100, 10),#主网格线间距
+                     minor_breaks = seq(0, 100, 2.5))#副网格线间距
+```
+
+### 7.7、绘图区域背景色
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(plot.background = element_rect(fill = "gray60",#plot.background
+                                       color = "gray30", size = 2))
+```
+
+### 7.8、panel.background 和 plot.background同时设置
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(panel.background = element_rect(fill = NA),
+        plot.background = element_rect(fill = "gray60",
+                                       color = "gray30", size = 2))
+
+```
+
+## 8、图边距(Margins)设置
+
+```{r}
+#方法1
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(plot.background = element_rect(fill = "gray60"),
+        plot.margin = unit(c(1, 3, 1, 8), "cm"))
+
+#方法2
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(plot.background = element_rect(fill = "gray60"),
+        plot.margin = margin(t = 1, r = 3, b = 1, l = 8, unit = "cm"))#trbl分别代表上右下左
+```
+
+## 9、图形分面(facets)
+
+两个函数完成：
+
+-   facet_wrap基于单个变量创建分面图
+-   facet_grid基于两个变量创建分面图
+
+### 9.1、facet_grid基于两个变量创建分面图
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "orangered", alpha = .3) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(x = "Year", y = "Temperature (°F)") +
+  facet_grid(year ~ season)#facet_grid，x轴方向按season分面，y轴方向按year分面
+```
+
+### 9.2、facet_wrap基于单个变量创建分面图 (按行、按列)
+
+```{r}
+g <- 
+  ggplot(chic, aes(x = date, y = temp)) +
+    geom_point(color = "chartreuse4", alpha = .3) +
+    labs(x = "Year", y = "Temperature (°F)") +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+
+g + facet_wrap(~ year,ncol=2,nrow=2) #默认按行，按列
+```
+
+### 9.3、facet_wrap基于单个变量创建分面图 (按行)
+
+```{r}
+g + facet_wrap(~ year, nrow = 1)#nrow指定按行分面
+```
+
+### 9.4、facet_wrap基于单个变量创建分面图 (按列)
+
+```{r}
+g + facet_wrap(~ year, ncol = 3) #ncol指定按列分面
+```
+
+### 9.5、facet_wrap各子图坐标轴刻度比例自适应
+
+```{r}
+g + facet_wrap(~ year, nrow = 2, scales = "free")
+```
+
+### 9.6、facet_wrap基于两个变量创建分面图
+
+```{r}
+g + facet_wrap(year ~ season, nrow = 4, scales = "free_x")
+```
+
+### 9.7、facet_grid各子图坐标轴刻度比例自适应
+
+```{r}
+g + facet_grid(year ~ season, scales = "free")
+#free使得x,y轴刻度同时自适应，也可以试试free_y/free_x分别设置
+```
+
+### 9.8、分面子图标题外观设置
+
+```{r}
+g + facet_wrap(~ year, nrow = 1, scales = "free_x") +
+  theme(strip.text = element_text(face = "bold", color = "chartreuse4",
+                                  hjust = 0, size = 20),
+        strip.background = element_rect(fill = "chartreuse3", linetype = "dotted")) #strip.text设置子标题颜色、背景色等等
+```
+
+### 9.9、突出显示特定子图
+
+```{r}
+#pacman::p_load(ggtext, rlang)
+library(ggtext)
+library(rlang)
+
+element_textbox_highlight <- function(..., hi.labels = NULL, hi.fill = NULL,
+                                      hi.col = NULL, hi.box.col = NULL, hi.family = NULL) {
+  structure(
+    c(element_textbox(...),
+      list(hi.labels = hi.labels, hi.fill = hi.fill, hi.col = hi.col, hi.box.col = hi.box.col, hi.family = hi.family)
+    ),
+    class = c("element_textbox_highlight", "element_textbox", "element_text", "element")
+  )
+}
+
+#定义element_grob.element_textbox_highlight函数
+element_grob.element_textbox_highlight <- function(element, label = "", ...) {
+  if (label %in% element$hi.labels) {
+    element$fill <- element$hi.fill %||% element$fill
+    element$colour <- element$hi.col %||% element$colour
+    element$box.colour <- element$hi.box.col %||% element$box.colour
+    element$family <- element$hi.family %||% element$family
+  }
+  NextMethod()
+}
+
+
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(aes(color = season == "Summer"), alpha = .3) +
+  labs(x = "Year", y = "Temperature (°F)") +
+  facet_wrap(~ season, nrow = 1) +
+  scale_color_manual(values = c("gray40", "firebrick"), guide = "none") +
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+    strip.background = element_blank(),
+    strip.text = element_textbox_highlight(
+      size = 12, face = "bold",
+      fill = "white", box.color = "white", color = "gray40",
+      halign = .5, linetype = 1, r = unit(0, "pt"), width = unit(1, "npc"),
+      padding = margin(2, 0, 1, 0), margin = margin(0, 1, 3, 1),
+      hi.labels = "Summer", hi.family = "sans",
+      hi.fill = "firebrick", hi.box.col = "firebrick", hi.col = "white"
+    )
+  )#element_textbox_highlight突出显示summer
+```
+
+## 10、多子图拼接
+
+### 10.1、多子图拼接(patchwork包)
+
+```{r}
+p1 <- ggplot(chic, aes(x = date, y = temp,
+                       color = season)) +
+        geom_point() +
+        geom_rug() +
+        labs(x = "Year", y = "Temperature (°F)")
+
+p2 <- ggplot(chic, aes(x = date, y = o3)) +
+        geom_line(color = "gray") +
+        geom_point(color = "darkorange2") +
+        labs(x = "Year", y = "Ozone")
+
+#pacman::p_load(patchwork)
+library(patchwork) #使用patchwork
+p1 + p2 #左右拼图
+
+p1 / p2 #上下拼图
+
+(g + p2) / p1 #混合拼图
+
+```
+
+### 10.2、多子图拼接(cowplot包)
+
+```{r}
+#pacman:: p_load(cowplot)
+library(cowplot)
+plot_grid(plot_grid(g, p1), p2, ncol = 1)#g和p1横向组合、再和p2纵向组合
+```
+
+### 10.3、多子图拼接(gridExtra包)
+
+```{r}
+#pacman:: p_load(gridExtra)
+
+library(gridExtra)
+grid.arrange(g, p1, p2,
+             layout_matrix = rbind(c(1, 2), c(3, 3)))
+#将整个图分成4份，1、2份放置g、p1，3、4份放置p2
+
+```
+
+### 10.4、多子图拼接(patchwork包自定义布局)
+
+```{r}
+layout <- "
+AABBBB#
+AACCDDE
+##CCDD#
+##CC###
+"
+#以上将整张图分成28份，分别放置5张图
+p2 + p1 + p1 + g + p2 +
+  plot_layout(design = layout)
+```
+
+## 11、颜色设置
+
+### 11.1、color设置单颜色
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "steelblue", size = 2) +#color
+  labs(x = "Year", y = "Temperature (°F)")
+```
+
+### 11.2、fill设置填充色
+
+```{r}
+ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(shape = 21, size = 2, stroke = 1,
+             color = "#3cc08f", fill = "#c08f3c") +#fill指定填充色
+  labs(x = "Year", y = "Temperature (°F)")
+```
+
+### 11.3、定性变量数据(Qualitative Variables)默认颜色
+
+```{r}
+#定性变量也可称为分类变量，可细分为无序分类变量、有序分类变量、二分类变量。ggplot2默认配色
+(ga <- ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)", color = NULL))#默认配色
+```
+
+### 11.4、定性变量数据scale_color_manual指定颜色
+
+```{r}
+ga + scale_color_manual(values = c("dodgerblue4",
+                                   "darkolivegreen4",
+                                   "darkorchid3",
+                                   "goldenrod1"))
+```
+
+### 11.5、定性变量数据使用ColorBrewer中调色盘
+
+```{r}
+ga + scale_color_brewer(palette = "Set1")
+RColorBrewer::display.brewer.all()
+```
+
+### 11.6、定性变量数据使用ggthemes中调色盘
+
+```{r}
+#pacman::p_load(ggthemes)
+library(ggthemes)
+ga + scale_color_tableau()#使用tableau色盘
+```
+
+### 11.7、定性变量数据使用ggsci中调色盘
+
+```{r}
+#pacman::p_load(ggsci)
+library(ggsci)
+g1 <- ga + scale_color_aaas()
+g2 <- ga + scale_color_npg()
+
+library(patchwork)
+(g1 + g2) * theme(legend.position = "top")
+```
+
+### 11.8、定量变量连续数据(Quantitative Variables) ggplot2默认配色
+
+-   定量变量数据可细分为连续性(浮点数据)和离散性(整数)变量，配色是渐变色；
+-   可通过scale_color_continuous、scale_color_gradient()、scale_color_gradient2()实现；
+-   使用sequential、diverging类别颜色。
+
+```{r}
+##sequential颜色
+gb <- ggplot(chic, aes(x = date, y = temp, color = temp)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)", color = "Temperature (°F):")
+
+#方法1
+gb + scale_color_continuous()#通过scale_color_continuous实现
+
+#方法2
+gb + scale_color_gradient()
+
+##diverging颜色
+gb + scale_color_gradient2()
+
+```
+
+### 11.9、定量变量连续数据自定义Sequential类配色
+
+```{r}
+gb + scale_color_gradient(low = "darkkhaki",
+                          high = "darkgreen")
+```
+
+### 11.10、定量变量连续数据自定义diverging类配色
+
+```{r}
+mid <- mean(chic$temp)
+gb + scale_color_gradient2(midpoint = mid, low = "#dd8a0b",
+                           mid = "grey92", high = "#32a676")
+```
+
+### 11.11、定量变量连续数据使用Viridis中调色盘
+
+Viridis详细使用见：<https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html>
+
+```{r}
+#scale_color_viridis_c()实现
+p1 <- gb + scale_color_viridis_c() + ggtitle("'viridis' (default)")
+p2 <- gb + scale_color_viridis_c(option = "inferno") + ggtitle("'inferno'")
+p3 <- gb + scale_color_viridis_c(option = "plasma") + ggtitle("'plasma'")
+p4 <- gb + scale_color_viridis_c(option = "cividis") + ggtitle("'cividis'")
+
+library(patchwork)
+(p1 + p2 + p3 + p4) * theme(legend.position = "bottom")
+```
+
+### 11.12、定量变量离散数据使用Viridis中调色盘
+
+```{r}
+#scale_color_viridis_d()实现
+ga + scale_color_viridis_d(guide = "none")
+```
+
+### 11.13、定量变量数据使用rcartocolor中调色盘
+
+```{r}
+#rcartocolor可适用于连续或离散类数据
+#scale_color_carto_c()
+#pacman::p_load(rcartocolor)
+library(rcartocolor)
+g1 <- gb + scale_color_carto_c(palette = "BurgYl")
+g2 <- gb + scale_color_carto_c(palette = "Earth")
+
+(g1 + g2) * theme(legend.position = "bottom")
+```
+
+### 11.14、定量变量数据使用scico中调色盘
+
+```{r}
+#pacman::p_load(scico)
+library(scico)
+g1 <- gb + scale_color_scico(palette = "berlin")
+g2 <- gb + scale_color_scico(palette = "hawaii", direction = -1)
+
+(g1 + g2) * theme(legend.position = "bottom")
+```
+
+## 12、绘图主题(Themes)设置
+
+### 12.0、ggplot2默认主题
+
+ggplot2有8种默认主题 <https://d33wubrfki0l68.cloudfront.net/8f6922154f36c61d2d68db642f7a6e1990f02f25/fcaab/post/2019-08-05_ggplot2-tutorial_files/figure-html/ggplot2-theme-gallery-1.png>
+
+### 12.1、调用ggthemes主题
+
+```{r}
+pacman::p_load(ggthemes)
+library(ggthemes)
+
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  ggtitle("Ups and Downs of Chicago's Daily Temperatures") +
+  theme_economist() +
+  scale_color_economist(name = NULL)#调用ggthemes中经济学人主题theme_economist
+```
+
+### 12.2、调用dplyr主题
+
+```{r}
+library(dplyr)
+chic_2000 <- filter(chic, year == 2000)
+
+ggplot(chic_2000, aes(x = temp, y = o3)) +
+  geom_point() +
+  labs(x = "Temperature (°F)", y = "Ozone") +
+  ggtitle("Temperature and Ozone Levels During the Year 2000 in Chicago") +
+  theme_tufte()#heme_tufte()主题
+```
+
+### 12.3、调用hrbrthemes主题
+
+```{r}
+#pacman::p_load(hrbrthemes)
+library(hrbrthemes)#hrbrthemes
+
+ggplot(chic, aes(x = temp, y = o3)) +
+  geom_point(aes(color = dewpoint), show.legend = FALSE) +
+  labs(x = "Temperature (°F)", y = "Ozone") +
+  ggtitle("Temperature and Ozone Levels in Chicago")
+```
+
+### 12.4、一次修改所有文字字体
+
+```{r}
+g <- ggplot(chic, aes(x = date, y = temp)) +
+  geom_point(color = "firebrick") +
+  labs(x = "Year", y = "Temperature (°F)",
+       title = "Temperatures in Chicago")
+
+g + theme_bw(base_family = "sans") #通过base_family设置
+```
+
+### 12.5、一次修改所有文字大小
+
+```{r}
+g + theme_bw(base_size = 15, base_family = "sans")#通过base_size设置
+```
+
+### 12.6、一次修改外框线、刻度线、网格线粗细
+
+```{r}
+g + theme_bw(base_line_size = 1, base_rect_size = 1)
+#base_line_size设置网格线粗细
+#base_rect_size设置外框线、刻度线粗细
+```
+
+### 12.7、自定义一个主题【强烈推荐】
+
+```{r}
+#添加字体
+#font_add("Roboto Condensed","")
+
+#定义theme_custom主题
+theme_custom <- function (base_size = 12, base_family = "sans") {
+  half_line <- base_size/2
+  theme(
+    line = element_line(color = "black", size = .5,
+                        linetype = 1, lineend = "butt"),
+    rect = element_rect(fill = "white", color = "black",
+                        size = .5, linetype = 1),
+    text = element_text(family = base_family, face = "plain",
+                        color = "black", size = base_size,
+                        lineheight = .9, hjust = .5, vjust = .5,
+                        angle = 0, margin = margin(), debug = FALSE),
+    axis.line = element_blank(),
+    axis.line.x = NULL,
+    axis.line.y = NULL,
+    axis.text = element_text(size = base_size * 1.1, color = "gray30"),
+    axis.text.x = element_text(margin = margin(t = .8 * half_line/2),
+                               vjust = 1),
+    axis.text.x.top = element_text(margin = margin(b = .8 * half_line/2),
+                                   vjust = 0),
+    axis.text.y = element_text(margin = margin(r = .8 * half_line/2),
+                               hjust = 1),
+    axis.text.y.right = element_text(margin = margin(l = .8 * half_line/2),
+                                     hjust = 0),
+    axis.ticks = element_line(color = "gray30", size = .7),
+    axis.ticks.length = unit(half_line / 1.5, "pt"),
+    axis.ticks.length.x = NULL,
+    axis.ticks.length.x.top = NULL,
+    axis.ticks.length.x.bottom = NULL,
+    axis.ticks.length.y = NULL,
+    axis.ticks.length.y.left = NULL,
+    axis.ticks.length.y.right = NULL,
+    axis.title.x = element_text(margin = margin(t = half_line),
+                                vjust = 1, size = base_size * 1.3,
+                                face = "bold"),
+    axis.title.x.top = element_text(margin = margin(b = half_line),
+                                    vjust = 0),
+    axis.title.y = element_text(angle = 90, vjust = 1,
+                                margin = margin(r = half_line),
+                                size = base_size * 1.3, face = "bold"),
+    axis.title.y.right = element_text(angle = -90, vjust = 0,
+                                      margin = margin(l = half_line)),
+    legend.background = element_rect(color = NA),
+    legend.spacing = unit(.4, "cm"),
+    legend.spacing.x = NULL,
+    legend.spacing.y = NULL,
+    legend.margin = margin(.2, .2, .2, .2, "cm"),
+    legend.key = element_rect(fill = "gray95", color = "white"),
+    legend.key.size = unit(1.2, "lines"),
+    legend.key.height = NULL,
+    legend.key.width = NULL,
+    legend.text = element_text(size = rel(.8)),
+    legend.text.align = NULL,
+    legend.title = element_text(hjust = 0),
+    legend.title.align = NULL,
+    legend.position = "right",
+    legend.direction = NULL,
+    legend.justification = "center",
+    legend.box = NULL,
+    legend.box.margin = margin(0, 0, 0, 0, "cm"),
+    legend.box.background = element_blank(),
+    legend.box.spacing = unit(.4, "cm"),
+    panel.background = element_rect(fill = "white", color = NA),
+    panel.border = element_rect(color = "gray30",
+                                fill = NA, size = .7),
+    panel.grid.major = element_line(color = "gray90", size = 1),
+    panel.grid.minor = element_line(color = "gray90", size = .5,
+                                    linetype = "dashed"),
+    panel.spacing = unit(base_size, "pt"),
+    panel.spacing.x = NULL,
+    panel.spacing.y = NULL,
+    panel.ontop = FALSE,
+    strip.background = element_rect(fill = "white", color = "gray30"),
+    strip.text = element_text(color = "black", size = base_size),
+    strip.text.x = element_text(margin = margin(t = half_line,
+                                                b = half_line)),
+    strip.text.y = element_text(angle = -90,
+                                margin = margin(l = half_line,
+                                                r = half_line)),
+    strip.text.y.left = element_text(angle = 90),
+    strip.placement = "inside",
+    strip.placement.x = NULL,
+    strip.placement.y = NULL,
+    strip.switch.pad.grid = unit(0.1, "cm"),
+    strip.switch.pad.wrap = unit(0.1, "cm"),
+    plot.background = element_rect(color = NA),
+    plot.title = element_text(size = base_size * 1.8, hjust = .5,
+                              vjust = 1, face = "bold",
+                              margin = margin(b = half_line * 1.2)),
+    plot.title.position = "panel",
+    plot.subtitle = element_text(size = base_size * 1.3,
+                                 hjust = .5, vjust = 1,
+                                 margin = margin(b = half_line * .9)),
+    plot.caption = element_text(size = rel(0.9), hjust = 1, vjust = 1,
+                                margin = margin(t = half_line * .9)),
+    plot.caption.position = "panel",
+    plot.tag = element_text(size = rel(1.2), hjust = .5, vjust = .5),
+    plot.tag.position = "topleft",
+    plot.margin = margin(base_size, base_size, base_size, base_size),
+    complete = TRUE
+  )
+}
+
+
+# 使用自己定义的主题
+theme_set(theme_custom())#调用theme_custom主题
+
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() + labs(x = "Year", y = "Temperature (°F)") + guides(color = FALSE)
+```
+
+### 12.8、更新自定义主题个别参数
+
+```{r}
+#更新自定义主题theme_custom的背景色
+theme_custom <- theme_update(panel.background = element_rect(fill = "gray60"))
+
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point() + labs(x = "Year", y = "Temperature (°F)") + guides(color = FALSE)
+```
+
+## 13、设置线(Lines)
+
+### 13.1、添加垂直、平行线
+
+```{r}
+theme_set(theme_bw()) 
+g <- ggplot(chic, aes(x = temp, y = dewpoint)) +
+  geom_point(color = "dodgerblue", alpha = .5) +
+  labs(x = "Temperature (°F)", y = "Dewpoint")
+
+g +
+  geom_vline(aes(xintercept = median(temp)), size = 1.5,#geom_vline添加垂直线
+             color = "firebrick", linetype = "dashed") +
+  geom_hline(aes(yintercept = median(dewpoint)), size = 1.5,#geom_hline添加水平线
+             color = "firebrick", linetype = "dashed")
+```
+
+### 13.2、添加斜线
+
+```{r}
+reg <- lm(dewpoint ~ temp, data = chic)
+
+g +
+  geom_abline(intercept = coefficients(reg)[1],#使用geom_abline
+              slope = coefficients(reg)[2],
+              color = "darkorange2", size = 1.5) +
+  labs(title = paste0("y = ", round(coefficients(reg)[2], 2),
+                      " * x + ", round(coefficients(reg)[1], 2)))
+```
+
+### 13.3、添加区域垂直线、水平线
+
+```{r}
+g +
+  #区域垂直线geom_linerange
+  geom_linerange(aes(x = 50, ymin = 20, ymax = 55),
+                 color = "steelblue", size = 2) +
+  #区域水平线geom_linerange
+  geom_linerange(aes(xmin = -Inf, xmax = 25, y = 0),
+                 color = "red", size = 1)
+```
+
+### 13.4、添加区域斜线
+
+```{r}
+g +
+  geom_segment(aes(x = 50, xend = 75,#geom_segment实现
+                   y = 20, yend = 45),
+               color = "purple", size = 2)
+```
+
+### 13.5、添加曲线
+
+```{r}
+# geom_curve设置
+g +
+  geom_curve(aes(x = 0, y = 60, xend = 75, yend = 0),
+             size = 2, color = "red") +
+  geom_curve(aes(x = 0, y = 60, xend = 75, yend = 0),
+             curvature = -0.7, angle = 45,
+             color = "green", size = 1) +
+  geom_curve(aes(x = 0, y = 60, xend = 75, yend = 0),
+             curvature = 0, size = 1.5)#curvature = 0即为直线
+```
+
+### 13.6、添加箭头
+
+```{r}
+g +
+  geom_curve(aes(x = 0, y = 60, xend = 75, yend = 0),
+             size = 2, color = "red",
+             arrow = arrow(length = unit(0.07, "npc")),type = "open") + #type控制是否两端均为箭头
+  geom_curve(aes(x = 5, y = 55, xend = 70, yend = 5),#起始终止坐标
+             curvature = -0.7, angle = 45,
+             color = "green", size = 1,
+             arrow = arrow(length = unit(0.03, "npc"),
+                           type = "closed",
+                           ends = "both"))
+```
+
+## 14、设置文字(Text)
+
+### 14.1、为每个数据点添加文字标签
+
+```{r}
+set.seed(2020)
+
+library(dplyr)
+sample <- chic %>%
+  dplyr::group_by(season) %>%
+  dplyr::sample_frac(0.01)
+
+
+ggplot(sample, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  geom_label(aes(label = season), hjust = .5, vjust = -.5) + 
+#通过label = season为每个数据点打上季节标签
+  labs(x = "Year", y = "Temperature (°F)") +
+  xlim(as.Date(c('1997-01-01', '2000-12-31'))) +
+  ylim(c(0, 90)) +
+  theme(legend.position = "none")
+
+#去掉方框
+ggplot(sample, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  geom_text(aes(label = season), fontface = "bold",#geom_text
+            hjust = .5, vjust = -.25) +
+  labs(x = "Year", y = "Temperature (°F)") +
+  xlim(as.Date(c('1997-01-01', '2000-12-31'))) +
+  ylim(c(0, 90)) +
+  theme(legend.position = "none")
+
+#ggrepel解决文字重叠
+#pacman::p_load(ggrepel)
+library(ggrepel)
+
+ggplot(sample, aes(x = date, y = temp, color = season)) +
+  geom_point() +
+  geom_label_repel(aes(label = season), fontface = "bold") +
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(legend.position = "none")
+
+#用季节给框填色
+library(ggrepel)
+
+ggplot(sample, aes(x = date, y = temp)) +
+  geom_point() +
+  geom_label_repel(aes(label = season, fill = season), fontface = "bold") + # fill = season
+  labs(x = "Year", y = "Temperature (°F)") +
+  theme(legend.position = "none")
+```
+
+### 14.2、添加文字注释
+
+```{r}
+g <-
+  ggplot(chic, aes(x = temp, y = dewpoint)) +
+  geom_point(alpha = .5) +
+  labs(x = "Temperature (°F)", y = "Dewpoint")
+
+g +
+  geom_text(aes(x = 25, y = 60,
+                label = "This is a useful annotation"))#geom_text实现
+
+#文字属性修改
+
+g +
+  geom_text(aes(x = 25, y = 60,
+                label = "This is a useful annotation"),
+            stat = "unique", family = "Bangers",
+            size = 7, color = "darkcyan")#设置字体、大小、颜色
+```
+
+### 14.3、分面图某个子图添加文字注释
+
+```{r}
+#定义在Summer子图上添加文本的data.frame
+ann <- data.frame(
+  o3 = 30,
+  temp = 20,
+  season = factor("Summer", levels = levels(factor(chic$season))),
+  label = "Here is enough space\nfor some annotations."
+)
+
+g <-
+  ggplot(chic, aes(x = o3, y = temp)) +
+  geom_point() +
+  labs(x = "Ozone", y = "Temperature (°F)")
+
+g +
+  geom_text(data = ann, aes(label = label),
+            size = 3, fontface = "bold",color="red") +
+  facet_wrap(~season)
+```
+
+### 14.4、所有分面图添加文字注释【并防止文字溢出】
+
+```{r}
+library(tidyverse)
+ann <-
+  chic %>%
+  group_by(season) %>%
+  summarize(o3 = min(o3, na.rm = TRUE) +
+              (max(o3, na.rm = TRUE) - min(o3, na.rm = TRUE)) / 2)
+#计算子图坐标轴的midpoint防止文字溢出，但是小编感觉调整一下size也可～
+g +
+  geom_text(data = ann,
+            aes(x = o3, y = 97,
+                label = "This is a useful annotation"),
+            size = 3, fontface = "bold") +
+  scale_y_continuous(limits = c(NA, 100)) +
+  facet_wrap(~season, scales = "free_x")
+```
+
+### 14.5、所有分面图添加文字注释grid包【并防止文字溢出】
+
+```{r}
+library(grid)
+my_grob <- grobTree(textGrob("This text stays in place!",
+                             x = .1, y = .9, hjust = 0,
+                             gp = gpar(col = "red",
+                                       fontsize = 10,
+                                       fontface = "bold")))
+
+g +
+  annotation_custom(my_grob) +
+  facet_wrap(~season, scales = "free_x") +
+  scale_y_continuous(limits = c(NA, 100))
+```
+
+### 14.6、ggtext添加文字注释
+
+```{r}
+library(ggtext)
+
+lab_md <- "This plot shows **temperature** in *°F* versus **ozone level** in *ppm*"
+
+g +
+  geom_richtext(aes(x = 35, y = 3, label = lab_md),
+                stat = "unique")
+```
+
+### 14.7、html语句添加文字注释
+
+```{r}
+#可突出文字颜色、斜体、加粗等
+lab_html <- "&#9733; This plot shows <b style='color:red;'>temperature</b> in <i>°F</i> versus <b style='color:blue;'>ozone level</b>in <i>ppm</i> &#9733;"
+
+g +
+  geom_richtext(aes(x = 33, y = 3, label = lab_html),
+                stat = "unique")
+```
+
+### 14.8、文字注释外框个性化
+
+```{r}
+lab_long <- "**Lorem ipsum dolor**<br><i style='font-size:8pt;color:red;'>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.<br>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</i>"
+
+g +
+  geom_textbox(aes(x = 40, y = 10, label = lab_long),
+               width = unit(15, "lines"), stat = "unique")#geom_textbox
+```
+
+## 15、坐标轴修改
+
+### 15.1、坐标轴翻转
+
+```{r}
+#方法1
+ggplot(chic, aes(x = season, y = o3)) +
+  geom_boxplot(fill = "indianred") +
+  labs(x = "Season", y = "Ozone") +
+  coord_flip()#coord_flip()实现
+
+#方法2
+ggplot(chic, aes(x = o3, y = season)) +
+  geom_boxplot(fill = "indianred", orientation = "y") +#orientation实现
+  labs(x = "Ozone", y = "Season")
+```
+
+### 15.2、坐标系宽高比固定
+
+```{r}
+ggplot(chic, aes(x = temp, y = o3)) +
+  geom_point() +
+  labs(x = "Temperature (°F)", y = "Ozone Level") +
+  scale_x_continuous(breaks = seq(0, 80, by = 20)) +
+  coord_fixed(ratio = 1/3) +#coord_fixed设置宽高比为3/1
+  theme(plot.background = element_rect(fill = "grey80"))
+```
+
+### 15.3、坐标轴翻转(连续性数据)
+
+```{r}
+ggplot(chic, aes(x = date, y = temp, color = o3)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  scale_y_reverse()#y轴刻度翻转scale_y_reverse()
+```
+
+### 15.4、坐标轴翻转(离散性数据)
+
+```{r}
+library(forcats)
+
+ggplot(chic, aes(x = temp, y = fct_rev(season))) +#fct_rev实现y轴翻转
+  geom_jitter(aes(color = season),
+              orientation = "y", show.legend = FALSE) +
+  labs(x = "Temperature (°F)", y = NULL)
+```
+
+### 15.5、坐标轴取对数、开放
+
+```{r}
+ggplot(chic, aes(x = date, y = temp, color = o3)) +
+  geom_point() +
+  labs(x = "Year", y = "Temperature (°F)") +
+  scale_y_log10(lim = c(0.1, 100))#scale_y_log10
+```
+
+### 15.6、极坐标轴转换
+
+```{r}
+library(tidyverse)
+
+chic %>%
+  dplyr::group_by(season) %>%
+  dplyr::summarize(o3 = median(o3)) %>%
+  ggplot(aes(x = season, y = o3)) +
+    geom_col(aes(fill = season), color = NA) +
+    labs(x = "", y = "Median Ozone Level") +
+    coord_polar() +#coord_polar()
+    guides(fill = FALSE)
+```
+
+## 16、图形类别大赏(优缺点)
+
+### 16.1、箱图
+
+```{r}
+g <-
+  ggplot(chic, aes(x = season, y = o3,
+                   color = season)) +
+    labs(x = "Season", y = "Ozone") +
+    scale_color_brewer(palette = "Dark2", guide = "none")
+
+g + geom_boxplot()#geom_boxplot()
+```
+
+### 16.2、箱图替代图(散点图)
+
+```{r}
+g + geom_point(alpha = .1)
+```
+
+### 16.3、箱图替代图(抖动图)
+
+```{r}
+g + geom_jitter(width = .3, alpha = .5)
+```
+
+### 16.4、箱图替代图(小提琴图)
+
+```{r}
+g + geom_violin(fill = "gray80", size = 1, alpha = .5)
+```
+
+### 16.5、箱图替代图(小提琴图结合抖动图)
+
+```{r}
+g + geom_violin(fill = "gray80", size = 1, alpha = .5) +
+    geom_jitter(alpha = .25, width = .3) +
+    coord_flip()
+```
+
+### 16.6、箱图替代图(小提琴图结合抖动图)-在小提琴中抖动
+
+```{r}
+#pacman::p_load(ggforce)
+library(ggforce)
+
+g + geom_violin(fill = "gray80", size = 1, alpha = .5) +
+    geom_sina(alpha = .25) +
+    coord_flip()
+```
+
+### 16.7、箱图替代图(小提琴图结合箱图)
+
+```{r}
+g + geom_violin(aes(fill = season), size = 1, alpha = .5) +
+    geom_boxplot(outlier.alpha = 0, coef = 0,
+                 color = "gray40", width = .2) +
+    scale_fill_brewer(palette = "Dark2", guide = "none") +
+    coord_flip()
+```
+
+### 16.8、Rug图
+
+Rug图，记录实际数值(不做任何拟合)在坐标轴上的分布，常常和散点图、热图一起使用
+
+```{r}
+ggplot(chic, aes(x = date, y = temp,
+                 color = season)) +
+  geom_point(show.legend = FALSE) +
+  geom_rug(show.legend = FALSE) + # geom_rug，默认在左边轴
+  labs(x = "Year", y = "Temperature (°F)")
+
+ggplot(chic, aes(x = date, y = temp, color = season)) +
+  geom_point(show.legend = FALSE) +
+  geom_rug(sides = "r", alpha = .3, show.legend = FALSE) +#设置位于右边轴sides = "r"
+  labs(x = "Year", y = "Temperature (°F)")
+```
+
+### 16.9、相关图(corrplot)
+
+```{r}
+M<-cor(mtcars)   
+library(corrplot)
+corrplot(M, method="pie")
+```
+
+### 16.10、二维等高/值线图
+
+```{r}
+ggplot(chic, aes(temp, o3)) +
+  geom_density_2d() +# 默认等值线图geom_density_2d
+  labs(x = "Temperature (°F)", x = "Ozone Level")
+
+ggplot(chic, aes(temp, o3)) +
+  geom_density_2d_filled(show.legend = FALSE) + #填充geom_density_2d_filled
+  coord_cartesian(expand = FALSE) +
+  labs(x = "Temperature (°F)", x = "Ozone Level")
+```
+
+### 16.11、三维等高/值线图
+
+```{r}
+#pacman::p_load(akima, reshape2)
+# 准备插值
+library(akima)
+fld <- with(chic, interp(x = temp, y = o3, z = dewpoint))
+
+# 准备long format数据
+library(reshape2)
+df <- melt(fld$z, na.rm = TRUE)
+names(df) <- c("x", "y", "Dewpoint")
+
+g <- ggplot(data = df, aes(x = x, y = y, z = Dewpoint))  +
+  labs(x = "Temperature (°F)", y = "Ozone Level",
+       color = "Dewpoint")
+
+g + stat_contour(aes(color = ..level.., fill = Dewpoint)) #stat_contour
+
+#geom_tile结合stat_contour
+g + geom_tile(aes(fill = Dewpoint)) +
+    stat_contour(color = "white", size = .7, bins = 5) +
+    scale_fill_viridis_c()
+```
+
+### 16.12、六边形网格图
+
+```{r}
+#pacman::p_load(hexbin)
+library(hexbin)
+ggplot(chic, aes(temp, o3)) +
+  geom_hex() + #hexbin,geom_hex()
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + #添加填充色盘
+  labs(x = "Temperature (°F)", y = "Ozone Level")
+
+ggplot(chic, aes(temp, o3)) +
+  geom_hex(aes(color = ..count..)) + #将颜色映射到..count..
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) +
+  scale_color_distiller(palette = "YlOrRd", direction = 1) +
+  labs(x = "Temperature (°F)", y = "Ozone Level")
+
+ggplot(chic, aes(temp, o3)) +
+  geom_hex(aes(color = ..density..)) + #将颜色映射到..density..
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) +
+  scale_color_distiller(palette = "YlOrRd", direction = 1) +
+  labs(x = "Temperature (°F)", y = "Ozone Level")
+
+ggplot(chic, aes(temp, o3)) +
+  geom_hex(color = "red") + #设置六边形相同的颜色边界
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) +
+  labs(x = "Temperature (°F)", y = "Ozone Level")
+
+ggplot(chic, aes(temp, o3, fill = ..density..)) +
+  geom_hex(bins = 50, color = "red") +#bins控制六边形单元格数量
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) +
+  labs(x = "Temperature (°F)", y = "Ozone Level")
+
+ggplot(chic, aes(temp, o3, fill = ..density..)) +
+  geom_bin2d(bins = 15, color = "grey") + #geom_bin2d()绘制常规网格
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) +
+  labs(x = "Temperature (°F)", y = "Ozone Level")
+```
+
+### 16.13、山峦图(ggridge)-一组数据
+
+```{r}
+#pacman::p_load(ggridges)
+
+library(ggridges)
+ggplot(chic, aes(x = temp, y = factor(year), fill = year)) +
+  geom_density_ridges(alpha = .8, color = "white",
+                      scale = 1.5, rel_min_height = .01) +#scale控制各个山峦之间是否重叠；rel_min_height控制山峦的尾巴
+  labs(x = "Temperature (°F)", y = "Year") +
+  guides(fill = "none") +
+  theme_ridges()
+```
+
+### 16.14、山峦图(ggridge)-多组数据
+
+```{r}
+library(tidyverse)
+
+
+ggplot(data = filter(chic, season %in% c("Summer", "Winter")),
+         aes(x = temp, y = year, fill = paste(year, season))) +
+  geom_density_ridges(alpha = .7, rel_min_height = .01,
+                      color = "white", from = -5, to = 95) +
+  scale_fill_cyclical(breaks = c("1997 Summer", "1997 Winter"),
+                      labels = c(`1997 Summer` = "Summer",
+                                 `1997 Winter` = "Winter"),
+                      values = c("tomato", "dodgerblue"),
+                      name = "Season:", guide = "legend") +
+  theme_ridges(grid = FALSE) +
+  labs(x = "Temperature (°F)", y = "Year")
+
+ggplot(chic, aes(x = temp, y = factor(year), fill = year)) +
+  geom_density_ridges(stat = "binline", bins = 25, scale = .9,
+                      draw_baseline = FALSE, show.legend = FALSE) + 
+#stat = "binline"创建多组直方图
+  theme_minimal() +
+  labs(x = "Temperature (°F)", y = "Season")
+```
+
+## 17、曲线区域设置(置信区间、标准差、区域填充等)
+
+### 17.1、曲线和坐标轴之间区域填充
+
+```{r}
+chic$o3run <- as.numeric(stats::filter(chic$o3, rep(1/30, 30), sides = 2))
+#方法1
+ggplot(chic, aes(x = date, y = o3run)) +
+   geom_ribbon(aes(ymin = 0, ymax = o3run),
+               fill = "#74C476", alpha = .4) + #使用geom_ribbon
+   geom_line(color = "chocolate", lwd = .8) +
+   labs(x = "Year", y = "Ozone")
+
+#方法2
+ggplot(chic, aes(x = date, y = o3run)) +
+   geom_area(color = "chocolate", lwd = .8,
+             fill = "#74C476", alpha = .4) +#使用geom_area
+   labs(x = "Year", y = "Ozone")
+```
+
+### 17.2、绘制曲线标准差区域
+
+```{r}
+chic$mino3 <- chic$o3run - sd(chic$o3run, na.rm = TRUE) #sd下限
+chic$maxo3 <- chic$o3run + sd(chic$o3run, na.rm = TRUE) #sd上限
+
+ggplot(chic, aes(x = date, y = o3run)) +
+   geom_ribbon(aes(ymin = mino3, ymax = maxo3), alpha = .5,
+               fill = "darkseagreen3", color = "transparent") + #geom_ribbon
+   geom_line(color = "aquamarine4", lwd = .7) +
+   labs(x = "Year", y = "Ozone")
+```
+
+## 18、图形添加平滑曲线
+
+### 18.1、添加LOESS或GAM曲线
+
+```{r}
+#少于1000个数据点添加LOESS曲线，否则，添加GAM曲线
+ggplot(chic, aes(x = date, y = temp)) +
+  labs(x = "Year", y = "Temperature (°F)") +
+  stat_smooth() + #此处数据点大于1000个，添加的是gam曲线
+  geom_point(color = "gray40", alpha = .5)
+```
+
+### 18.2、添加线性拟合曲线
+
+```{r}
+ggplot(chic, aes(x = temp, y = death)) +
+   labs(x = "Temperature (°F)", y = "Deaths") +
+   stat_smooth(method = "lm", se = FALSE,
+               color = "firebrick", size = 1.3) + #method = "lm"
+   geom_point(color = "gray40", alpha = .5)
+```
+
+### 18.3、自定义拟合方式
+
+```{r}
+ggplot(chic, aes(x = o3, y = temp))+
+  labs(x = "Ozone Level", y = "Temperature (°F)") +
+  geom_smooth(
+    method = "lm",
+    formula = y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5), #formula指定拟合公式
+    color = "black",
+    fill = "firebrick"
+  ) +
+  geom_point(color = "gray40", alpha = .3)
+```
+
+### 18.4、geom_smooth()、stat_smooth添加拟合曲线
+
+```{r}
+#方法1
+ggplot(chic, aes(x = o3, y = temp))+
+  labs(x = "Ozone Level", y = "Temperature (°F)") +
+  geom_smooth(stat = "smooth") + ## the default
+  geom_point(color = "gray40", alpha = .3)
+
+#方法2
+ggplot(chic, aes(x = o3, y = temp))+
+  labs(x = "Ozone Level", y = "Temperature (°F)") +
+  stat_smooth(geom = "smooth") + ## the default
+  geom_point(color = "gray40", alpha = .3)
+```
+
+## 19、绘制交互图形
+
+### 19.1、ggplot2结合shiny
+
+```{r}
+#pacman::p_load(shiny)
+library(shiny)
+#runExample("01_hello")
+```
+
+### 19.2、ggplot2结合plotly
+
+```{r}
+g <- ggplot(chic, aes(date, temp)) +
+  geom_line(color = "grey") +
+  geom_point(aes(color = season)) +
+  scale_color_brewer(palette = "Dark2", guide = "none") +
+  labs(x = NULL, y = "Temperature (°F)") +
+  theme_bw()
+
+#pacman::p_load(plotly)
+library(plotly)
+ggplotly(g)
+```
+
+### 19.3、ggplot2结合ggiraph
+
+```{r}
+#pacman::p_load(ggiraph)
+library(ggiraph)
+
+g <- ggplot(chic, aes(date, temp)) +
+  geom_line(color = "grey") +
+  geom_point_interactive(
+    aes(color = season, tooltip = season, data_id = season)
+  ) +
+  scale_color_brewer(palette = "Dark2", guide = "none") +
+  labs(x = NULL, y = "Temperature (°F)") +
+  theme_bw()
+
+girafe(ggobj = g)
+```
+
+### 19.4、Highcharts的R语言API-highcharter
+
+```{r}
+#pacman::p_load(highcharter)
+library(highcharter)
+
+hchart(chic, "scatter", hcaes(x = date, y = temp, group = season))
+```
+
+### 19.5、Echarts的R语言API-echarts4r
+
+```{r}
+#pacman::p_load(echarts4r)
+library(echarts4r)
+
+chic %>%
+  e_charts(date) %>%
+  e_scatter(temp, symbol_size = 7) %>%
+  e_visual_map(temp) %>%
+  e_y_axis(name = "Temperature (°F)") %>%
+  e_legend(FALSE)
+```
